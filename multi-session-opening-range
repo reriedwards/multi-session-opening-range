@@ -1,19 +1,19 @@
 // @version=6
 indicator("Multi-Session Opening Range", overlay=true)
 
-lineWidthInput = input.int(2, title="Line Thickness", minval=1, group="Global Settings")
+lineWidthInput = input.int(1, title="Line Thickness", minval=1, group="Global Settings")
 showOriginalLines = input.bool(true, title="Show Original Opening Range Lines", group="Global Settings")
 
 // --- New York Session Inputs ---
 enableNY         = input.bool(true, title="Enable New York Session", group="New York Session")
 nyStartHour      = input.int(9, title="Start Hour", minval=0, maxval=23, group="New York Session")
-nyStartMin       = input.int(30, title="Start Minute", minval=0, maxval=59, group="New York Session")
+nyStartMin       = input.int(27, title="Start Minute", minval=0, maxval=59, group="New York Session")
 nyRangeMinutes   = input.int(3, title="Opening Range (Minutes)", minval=1, group="New York Session")
-nyExtendMinutes  = input.int(390, title="Extension Time (Minutes)", minval=1, group="New York Session")
-nyHighColor      = input.color(color.green, title="High Line Color", group="New York Session")
+nyExtendMinutes  = input.int(393, title="Extension Time (Minutes)", minval=1, group="New York Session")
+nyHighColor      = input.color(color.blue, title="High Line Color", group="New York Session")
 nyLowColor       = input.color(color.red, title="Low Line Color", group="New York Session")
-nyBreakHighColor = input.color(color.lime, title="Upper Breakout Line Color", group="New York Session")
-nyBreakLowColor  = input.color(color.maroon, title="Lower Breakout Line Color", group="New York Session")
+nyBreakHighColor = input.color(color.blue, title="Upper Breakout Line Color", group="New York Session")
+nyBreakLowColor  = input.color(color.red, title="Lower Breakout Line Color", group="New York Session")
 
 // --- London Session Inputs ---
 enableLDN         = input.bool(false, title="Enable London Session", group="London Session")
@@ -27,15 +27,15 @@ ldnBreakHighColor = input.color(color.aqua, title="Upper Breakout Line Color", g
 ldnBreakLowColor  = input.color(color.yellow, title="Lower Breakout Line Color", group="London Session")
 
 // --- Tokyo Session Inputs ---
-enableTKO         = input.bool(false, title="Enable Tokyo Session", group="Tokyo Session")
-tkoStartHour      = input.int(19, title="Start Hour", minval=0, maxval=23, group="Tokyo Session")
-tkoStartMin       = input.int(0, title="Start Minute", minval=0, maxval=59, group="Tokyo Session")
-tkoRangeMinutes   = input.int(3, title="Opening Range (Minutes)", minval=1, group="Tokyo Session")
-tkoExtendMinutes  = input.int(540, title="Extension Time (Minutes)", minval=1, group="Tokyo Session")
-tkoHighColor      = input.color(color.purple, title="High Line Color", group="Tokyo Session")
-tkoLowColor       = input.color(color.navy, title="Low Line Color", group="Tokyo Session")
-tkoBreakHighColor = input.color(color.fuchsia, title="Upper Breakout Line Color", group="Tokyo Session")
-tkoBreakLowColor  = input.color(color.blue, title="Lower Breakout Line Color", group="Tokyo Session")
+enableTKO         = input.bool(true, title="Enable Tokyo Session", group="Tokyo Session")
+tkoStartHour      = input.int(8, title="Start Hour", minval=0, maxval=23, group="Tokyo Session")
+tkoStartMin       = input.int(3, title="Start Minute", minval=0, maxval=59, group="Tokyo Session")
+tkoRangeMinutes   = input.int(57, title="Opening Range (Minutes)", minval=1, group="Tokyo Session")
+tkoExtendMinutes  = input.int(362, title="Extension Time (Minutes)", minval=1, group="Tokyo Session")
+tkoHighColor      = input.color(color.blue, title="High Line Color", group="Tokyo Session")
+tkoLowColor       = input.color(color.red, title="Low Line Color", group="Tokyo Session")
+tkoBreakHighColor = input.color(color.blue, title="Upper Breakout Line Color", group="Tokyo Session")
+tkoBreakLowColor  = input.color(color.red, title="Lower Breakout Line Color", group="Tokyo Session")
 
 // --- Opening Range Logic Function (Returns High/Low boundaries) ---
 getOpeningRange(bool enabled, string tz, int startHour, int startMin, int rangeMins, int extendMins, color hiColor, color loColor, color breakHiColor, color breakLoColor, int thickness) =>
