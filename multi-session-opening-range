@@ -1,5 +1,5 @@
 // @version=6
-indicator("Multi-Session Opening Range", overlay=true)
+indicator("Multi-Session Opening Range", overlay=true, max_lines_count=500)
 
 lineWidthInput = input.int(1, title="Line Thickness", minval=1, group="Global Settings")
 showOriginalLines = input.bool(true, title="Show Original Opening Range Lines", group="Global Settings")
@@ -22,9 +22,9 @@ ldnStartMin       = input.int(0, title="Start Minute", minval=0, maxval=59, grou
 ldnRangeMinutes   = input.int(3, title="Opening Range (Minutes)", minval=1, group="London Session")
 ldnExtendMinutes  = input.int(540, title="Extension Time (Minutes)", minval=1, group="London Session")
 ldnHighColor      = input.color(color.blue, title="High Line Color", group="London Session")
-ldnLowColor       = input.color(color.orange, title="Low Line Color", group="London Session")
-ldnBreakHighColor = input.color(color.aqua, title="Upper Breakout Line Color", group="London Session")
-ldnBreakLowColor  = input.color(color.yellow, title="Lower Breakout Line Color", group="London Session")
+ldnLowColor       = input.color(color.red, title="Low Line Color", group="London Session")
+ldnBreakHighColor = input.color(color.blue, title="Upper Breakout Line Color", group="London Session")
+ldnBreakLowColor  = input.color(color.red, title="Lower Breakout Line Color", group="London Session")
 
 // --- Tokyo Session Inputs ---
 enableTKO         = input.bool(true, title="Enable Tokyo Session", group="Tokyo Session")
