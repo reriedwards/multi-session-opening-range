@@ -29,8 +29,8 @@ ldnBreakLowColor  = input.color(color.yellow, title="Lower Breakout Line Color",
 // --- Tokyo Session Inputs ---
 enableTKO         = input.bool(true, title="Enable Tokyo Session", group="Tokyo Session")
 tkoStartHour      = input.int(8, title="Start Hour", minval=0, maxval=23, group="Tokyo Session")
-tkoStartMin       = input.int(3, title="Start Minute", minval=0, maxval=59, group="Tokyo Session")
-tkoRangeMinutes   = input.int(57, title="Opening Range (Minutes)", minval=1, group="Tokyo Session")
+tkoStartMin       = input.int(57, title="Start Minute", minval=0, maxval=59, group="Tokyo Session")
+tkoRangeMinutes   = input.int(3, title="Opening Range (Minutes)", minval=1, group="Tokyo Session")
 tkoExtendMinutes  = input.int(362, title="Extension Time (Minutes)", minval=1, group="Tokyo Session")
 tkoHighColor      = input.color(color.blue, title="High Line Color", group="Tokyo Session")
 tkoLowColor       = input.color(color.red, title="Low Line Color", group="Tokyo Session")
