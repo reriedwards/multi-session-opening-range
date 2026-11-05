@@ -102,24 +102,3 @@ getOpeningRange(bool enabled, string tz, int startHour, int startMin, int rangeM
 [nyHigh, nyLow] = getOpeningRange(enableNY, "America/New_York", nyStartHour, nyStartMin, nyRangeMinutes, nyExtendMinutes, nyHighColor, nyLowColor, nyBreakHighColor, nyBreakLowColor, lineWidthInput)
 [ldnHigh, ldnLow] = getOpeningRange(enableLDN, "Europe/London", ldnStartHour, ldnStartMin, ldnRangeMinutes, ldnExtendMinutes, ldnHighColor, ldnLowColor, ldnBreakHighColor, ldnBreakLowColor, lineWidthInput)
 [tkoHigh, tkoLow] = getOpeningRange(enableTKO, "Asia/Tokyo", tkoStartHour, tkoStartMin, tkoRangeMinutes, tkoExtendMinutes, tkoHighColor, tkoLowColor, tkoBreakHighColor, tkoBreakLowColor, lineWidthInput)
-
-// --- Global Breakout Detection Logic ---
-bool alertHigh = false
-bool alertLow  = false
-
-// Check breaks against any active session parameters
-if (enableNY and not na(nyHigh))
-    alertHigh := alertHigh or ta.crossover(close, nyHigh)
-    alertLow  := alertLow  or ta.crossunder(close, nyLow)
-
-if (enableLDN and not na(ldnHigh))
-    alertHigh := alertHigh or ta.crossover(close, ldnHigh)
-    alertLow  := alertLow  or ta.crossunder(close, ldnLow)
-
-if (enableTKO and not na(tkoHigh))
-    alertHigh := alertHigh or ta.crossover(close, tkoHigh)
-    alertLow  := alertLow  or ta.crossunder(close, tkoLow)
-
-// --- Define TradingView UI Alerts ---
-alertcondition(alertHigh, title="BUY", message="BUY")
-alertcondition(alertLow,  title="SELL",  message="SELL")
