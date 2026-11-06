@@ -2,8 +2,6 @@
 indicator("Multi-Session Opening Range", overlay=true, max_lines_count=500)
 
 lineWidthInput    = input.int(1, title="Line Thickness", minval=1, group="Global Settings")
-showOriginalLines = input.bool(true, title="Show Original Opening Range Lines", group="Global Settings")
-breakoutStyle     = input.string("Show Both", title="Breakout Line Display", options=["First Only", "Show Both", "Hide All"], group="Global Settings")
 
 // --- New York Session Inputs ---
 enableNY         = input.bool(true, title="Enable New York Session", group="New York Session")
@@ -58,7 +56,6 @@ getOpeningRange(bool enabled, string tz, int startHour, int startMin, int rangeM
         int extensionMs    = extendMins * 60 * 1000
         int futureTime     = sessionStartMs + extensionMs
 
-        // Fixed the missing array index sequence to accurately capture historical time steps
         bool isNewSession = (time >= sessionStartMs) and (time[1] < sessionStartMs or na(time[1]))
 
         if isNewSession
@@ -76,27 +73,21 @@ getOpeningRange(bool enabled, string tz, int startHour, int startMin, int rangeM
         bool triggerDrawing   = timeWindowPassed and not linesDrawn and not na(maxHigh)
 
         if triggerDrawing
-            if showOriginalLines
-                line.new(x1=sessionStartMs, y1=maxHigh, x2=futureTime, y2=maxHigh, xloc=xloc.bar_time, color=hiColor, width=thickness)
-                line.new(x1=sessionStartMs, y1=minLow, x2=futureTime, y2=minLow, xloc=xloc.bar_time, color=loColor, width=thickness)
+            line.new(x1=sessionStartMs, y1=maxHigh, x2=futureTime, y2=maxHigh, xloc=xloc.bar_time, color=hiColor, width=thickness)
+            line.new(x1=sessionStartMs, y1=minLow, x2=futureTime, y2=minLow, xloc=xloc.bar_time, color=loColor, width=thickness)
             linesDrawn := true
 
-        // Draw breakouts during the extension window
-        if linesDrawn and time >= rangeEndMs and time < futureTime and barstate.isconfirmed and breakoutStyle != "Hide All"
+        if linesDrawn and time >= rangeEndMs and time < futureTime and barstate.isconfirmed
             
-            // Check if we are allowed to execute a breakout line based on "First Only" restriction
-            bool blockByFirstOnly = (breakoutStyle == "First Only" and (breakHighDrawn or breakLowDrawn))
+            // Close above original opening range high
+            if close > maxHigh and not breakHighDrawn
+                line.new(x1=time_close, y1=close, x2=futureTime, y2=close, xloc=xloc.bar_time, color=breakHiColor, width=thickness)
+                breakHighDrawn := true
 
-            if not blockByFirstOnly
-                // Close above original opening range high
-                if close > maxHigh and not breakHighDrawn
-                    line.new(x1=time_close, y1=close, x2=futureTime, y2=close, xloc=xloc.bar_time, color=breakHiColor, width=thickness)
-                    breakHighDrawn := true
-
-                // Close below original opening range low
-                else if close < minLow and not breakLowDrawn
-                    line.new(x1=time_close, y1=close, x2=futureTime, y2=close, xloc=xloc.bar_time, color=breakLoColor, width=thickness)
-                    breakLowDrawn := true
+            // Close below original opening range low
+            else if close < minLow and not breakLowDrawn
+                line.new(x1=time_close, y1=close, x2=futureTime, y2=close, xloc=xloc.bar_time, color=breakLoColor, width=thickness)
+                breakLowDrawn := true
 
         // Clear tracking values once past extension window limit to allow breakouts to reset safely
         if (time >= futureTime)
