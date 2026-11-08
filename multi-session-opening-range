@@ -1,140 +1,204 @@
-// @version=6
+
+ //@version=6
 indicator("Multi-Session Opening Range", overlay=true, max_lines_count=500)
 
-// --- Global Settings ---
-lineWidthInput    = input.int(1, title="Line Thickness", minval=1, group="Global Settings")
+// ─────────────────────────────────────────────────────────────
+// GLOBAL SETTINGS
+// ─────────────────────────────────────────────────────────────
+lineWidth = input.int(1, "Line Thickness", minval=1, group="Global Settings")
 
-// --- New York Session Inputs ---
-enableNY         = input.bool(true, title="Enable New York Session", group="New York Session")
-nyStartHour      = input.int(9, title="Start Hour", minval=0, maxval=23, group="New York Session")
-nyStartMin       = input.int(27, title="Start Minute", minval=0, maxval=59, group="New York Session")
-nyRangeMinutes   = input.int(3, title="Opening Range (Minutes)", minval=1, group="New York Session")
-nyExtendMinutes  = input.int(393, title="Extension Time (Minutes)", minval=1, group="New York Session")
-nyHighColor      = input.color(color.blue, title="High Line Color", group="New York Session")
-nyLowColor       = input.color(color.red, title="Low Line Color", group="New York Session")
-nyBreakHighColor = input.color(color.blue, title="Upper Breakout Line Color", group="New York Session")
-nyBreakLowColor  = input.color(color.red, title="Lower Breakout Line Color", group="New York Session")
-nyExtHighColor   = input.color(color.blue, title="Upper Half Range Line Color", group="New York Session")
-nyExtLowColor    = input.color(color.red, title="Lower Half Range Line Color", group="New York Session")
+// ─────────────────────────────────────────────────────────────
+// NEW YORK SESSION
+// ─────────────────────────────────────────────────────────────
+NY = "New York Session"
 
-// --- London Session Inputs ---
-enableLDN         = input.bool(false, title="Enable London Session", group="London Session")
-ldnStartHour      = input.int(8, title="Start Hour", minval=0, maxval=23, group="London Session")
-ldnStartMin       = input.int(27, title="Start Minute", minval=0, maxval=59, group="London Session")
-ldnRangeMinutes   = input.int(3, title="Opening Range (Minutes)", minval=1, group="London Session")
-ldnExtendMinutes  = input.int(300, title="Extension Time (Minutes)", minval=1, group="London Session")
-ldnHighColor      = input.color(color.blue, title="High Line Color", group="London Session")
-ldnLowColor       = input.color(color.red, title="Low Line Color", group="London Session")
-ldnBreakHighColor = input.color(color.blue, title="Upper Breakout Line Color", group="London Session")
-ldnBreakLowColor  = input.color(color.red, title="Lower Breakout Line Color", group="London Session")
-ldnExtHighColor   = input.color(color.blue, title="Upper Half Range Line Color", group="London Session")
-ldnExtLowColor    = input.color(color.red, title="Lower Half Range Line Color", group="London Session")
+nyEnabled   = input.bool(true, "Enable New York Session", group=NY)
+nyHour      = input.int(9, "Start Hour", minval=0, maxval=23, group=NY)
+nyMinute    = input.int(27, "Start Minute", minval=0, maxval=59, group=NY)
+nyRange     = input.int(3, "Opening Range (Minutes)", minval=1, group=NY)
+nyExtension = input.int(393, "Extension Time (Minutes)", minval=1, group=NY)
 
-// --- Tokyo Session Inputs ---
-enableTKO         = input.bool(true, title="Enable Tokyo Session", group="Tokyo Session")
-tkoStartHour      = input.int(8, title="Start Hour", minval=0, maxval=23, group="Tokyo Session")
-tkoStartMin       = input.int(57, title="Start Minute", minval=0, maxval=59, group="Tokyo Session")
-tkoRangeMinutes   = input.int(3, title="Opening Range (Minutes)", minval=1, group="Tokyo Session")
-tkoExtendMinutes  = input.int(362, title="Extension Time (Minutes)", minval=1, group="Tokyo Session")
-tkoHighColor      = input.color(color.blue, title="High Line Color", group="Tokyo Session")
-tkoLowColor       = input.color(color.red, title="Low Line Color", group="Tokyo Session")
-tkoBreakHighColor = input.color(color.blue, title="Upper Breakout Line Color", group="Tokyo Session")
-tkoBreakLowColor  = input.color(color.red, title="Lower Breakout Line Color", group="Tokyo Session")
-tkoExtHighColor   = input.color(color.blue, title="Upper Half Range Line Color", group="Tokyo Session")
-tkoExtLowColor    = input.color(color.red, title="Lower Half Range Line Color", group="Tokyo Session")
+nyHighColor      = input.color(color.blue, "High Line Color", group=NY)
+nyLowColor       = input.color(color.red, "Low Line Color", group=NY)
+nyBreakHighColor = input.color(color.blue, "Upper Breakout Line Color", group=NY)
+nyBreakLowColor  = input.color(color.red, "Lower Breakout Line Color", group=NY)
+nyExtHighColor   = input.color(color.blue, "Upper Half Range Line Color", group=NY)
+nyExtLowColor    = input.color(color.red, "Lower Half Range Line Color", group=NY)
 
-// --- Opening Range Logic Function (Returns High/Low boundaries) ---
-getOpeningRange(bool enabled, string tz, int startHour, int startMin, int rangeMins, int extendMins, color hiColor, color loColor, color breakHiColor, color breakLoColor, color extHiColor, color extLowColor, int thickness) =>
-    var float maxHigh   = na
-    var float minLow    = na
-    var bool linesDrawn = false
+// ─────────────────────────────────────────────────────────────
+// LONDON SESSION
+// ─────────────────────────────────────────────────────────────
+LDN = "London Session"
 
-    // Track breakouts and extension line crossings independently
-    var bool breakHighDrawn = false
-    var bool breakLowDrawn  = false
-    var bool upperExtDrawn  = false
-    var bool lowerExtDrawn  = false
-    
-    // Maintain computed levels across bars
-    var float upperExtLevel = na
-    var float lowerExtLevel = na
+ldnEnabled   = input.bool(false, "Enable London Session", group=LDN)
+ldnHour      = input.int(8, "Start Hour", minval=0, maxval=23, group=LDN)
+ldnMinute    = input.int(27, "Start Minute", minval=0, maxval=59, group=LDN)
+ldnRange     = input.int(3, "Opening Range (Minutes)", minval=1, group=LDN)
+ldnExtension = input.int(300, "Extension Time (Minutes)", minval=1, group=LDN)
+
+ldnHighColor      = input.color(color.blue, "High Line Color", group=LDN)
+ldnLowColor       = input.color(color.red, "Low Line Color", group=LDN)
+ldnBreakHighColor = input.color(color.blue, "Upper Breakout Line Color", group=LDN)
+ldnBreakLowColor  = input.color(color.red, "Lower Breakout Line Color", group=LDN)
+ldnExtHighColor   = input.color(color.blue, "Upper Half Range Line Color", group=LDN)
+ldnExtLowColor    = input.color(color.red, "Lower Half Range Line Color", group=LDN)
+
+// ─────────────────────────────────────────────────────────────
+// TOKYO SESSION
+// ─────────────────────────────────────────────────────────────
+TKO = "Tokyo Session"
+
+tkoEnabled   = input.bool(true, "Enable Tokyo Session", group=TKO)
+tkoHour      = input.int(8, "Start Hour", minval=0, maxval=23, group=TKO)
+tkoMinute    = input.int(57, "Start Minute", minval=0, maxval=59, group=TKO)
+tkoRange     = input.int(3, "Opening Range (Minutes)", minval=1, group=TKO)
+tkoExtension = input.int(362, "Extension Time (Minutes)", minval=1, group=TKO)
+
+tkoHighColor      = input.color(color.blue, "High Line Color", group=TKO)
+tkoLowColor       = input.color(color.red, "Low Line Color", group=TKO)
+tkoBreakHighColor = input.color(color.blue, "Upper Breakout Line Color", group=TKO)
+tkoBreakLowColor  = input.color(color.red, "Lower Breakout Line Color", group=TKO)
+tkoExtHighColor   = input.color(color.blue, "Upper Half Range Line Color", group=TKO)
+tkoExtLowColor    = input.color(color.red, "Lower Half Range Line Color", group=TKO)
+
+// ─────────────────────────────────────────────────────────────
+// SESSION PROCESSING
+// ─────────────────────────────────────────────────────────────
+processSession(
+     bool enabled,
+     string timezone,
+     int startHour,
+     int startMinute,
+     int rangeMinutes,
+     int extensionMinutes,
+     color highColor,
+     color lowColor,
+     color breakHighColor,
+     color breakLowColor,
+     color extHighColor,
+     color extLowColor) =>
+
+    var float rangeHigh = na
+    var float rangeLow = na
+    var float upperExtension = na
+    var float lowerExtension = na
+
+    var bool rangeDrawn = false
+    var bool upperBreakDrawn = false
+    var bool lowerBreakDrawn = false
+    var bool upperExtDrawn = false
+    var bool lowerExtDrawn = false
 
     if enabled
-        int currentYear  = year(time, tz)
-        int currentMonth = month(time, tz)
-        int currentDay   = dayofmonth(time, tz)
+        // Session timestamps
+        int startTime = timestamp(
+             timezone,
+             year(time, timezone),
+             month(time, timezone),
+             dayofmonth(time, timezone),
+             startHour,
+             startMinute)
 
-        int sessionStartMs = timestamp(tz, currentYear, currentMonth, currentDay, startHour, startMin, 0)
-        int rangeEndMs     = sessionStartMs + (rangeMins * 60 * 1000)
-        int extensionMs    = extendMins * 60 * 1000
-        int futureTime     = sessionStartMs + extensionMs
+        int rangeEnd = startTime + rangeMinutes * 60000
+        int sessionEnd = startTime + extensionMinutes * 60000
 
-        bool isNewSession = (time >= sessionStartMs) and (time[1] < sessionStartMs or na(time[1]))
+        // Session state
+        bool newSession = time >= startTime and (na(time[1]) or time[1] < startTime)
+        bool inRange = time >= startTime and time < rangeEnd
+        bool inExtension = time >= rangeEnd and time < sessionEnd
 
-        if isNewSession
-            maxHigh        := high
-            minLow         := low
-            linesDrawn     := false
-            breakHighDrawn := false
-            breakLowDrawn  := false
-            upperExtDrawn  := false
-            lowerExtDrawn  := false
-            upperExtLevel  := na
-            lowerExtLevel  := na
+        // Reset state at session start
+        if newSession
+            rangeHigh := high
+            rangeLow := low
 
-        else if (time >= sessionStartMs) and (time < rangeEndMs)
-            maxHigh    := math.max(maxHigh, high)
-            minLow     := math.min(minLow, low)
+            rangeDrawn := false
+            upperBreakDrawn := false
+            lowerBreakDrawn := false
+            upperExtDrawn := false
+            lowerExtDrawn := false
 
-        bool timeWindowPassed = (time >= rangeEndMs) or (time + (timeframe.multiplier * 60 * 1000) > rangeEndMs)
-        bool triggerDrawing   = timeWindowPassed and not linesDrawn and not na(maxHigh)
+            upperExtension := na
+            lowerExtension := na
 
-        if triggerDrawing
-            // Calculate range size and exact half-range expansion levels
-            float rangeSize = maxHigh - minLow
-            upperExtLevel  := maxHigh + (rangeSize * 0.5)
-            lowerExtLevel  := minLow - (rangeSize * 0.5)
+        // Build opening range
+        else if inRange and not na(rangeHigh)
+            rangeHigh := math.max(rangeHigh, high)
+            rangeLow := math.min(rangeLow, low)
 
-            // Draw Core Boundary Lines
-            line.new(x1=sessionStartMs, y1=maxHigh, x2=futureTime, y2=maxHigh, xloc=xloc.bar_time, color=hiColor, width=thickness)
-            line.new(x1=sessionStartMs, y1=minLow, x2=futureTime, y2=minLow, xloc=xloc.bar_time, color=loColor, width=thickness)
+        // Finalize opening range
+        bool rangeComplete = time >= rangeEnd or time + timeframe.multiplier * 60000 > rangeEnd
 
-            linesDrawn := true
+        if rangeComplete and not rangeDrawn and not na(rangeHigh)
+            float rangeSize = rangeHigh - rangeLow
 
-        // Real-Time Processing Window (Active after range forms, before extension limit)
-        if linesDrawn and time >= rangeEndMs and time < futureTime
-            
-            // --- UPPER SIDE MUTUAL EXCLUSION ---
-            // 1. Check real-time wick touch for Mid-Range line FIRST (x1 is set to current time of cross)
-            if not upperExtDrawn and not breakHighDrawn and high >= upperExtLevel
-                line.new(x1=time, y1=upperExtLevel, x2=futureTime, y2=upperExtLevel, xloc=xloc.bar_time, color=extHiColor, width=thickness, style=line.style_solid)
+            upperExtension := rangeHigh + rangeSize * 0.5
+            lowerExtension := rangeLow - rangeSize * 0.5
+
+            line.new(startTime, rangeHigh, sessionEnd, rangeHigh,
+                 xloc=xloc.bar_time, color=highColor, width=lineWidth)
+
+            line.new(startTime, rangeLow, sessionEnd, rangeLow,
+                 xloc=xloc.bar_time, color=lowColor, width=lineWidth)
+
+            rangeDrawn := true
+
+        // Process breakouts and extension touches
+        if rangeDrawn and inExtension
+
+            // Upper extension: wick touch takes priority
+            if not upperExtDrawn and not upperBreakDrawn and high >= upperExtension
+                line.new(time, upperExtension, sessionEnd, upperExtension,
+                     xloc=xloc.bar_time, color=extHighColor, width=lineWidth)
+
                 upperExtDrawn := true
-                
-            // 2. Check confirmed candle close for Breakout Line SECOND
-            if barstate.isconfirmed and not breakHighDrawn and not upperExtDrawn and close > maxHigh
-                line.new(x1=time_close, y1=close, x2=futureTime, y2=close, xloc=xloc.bar_time, color=breakHiColor, width=thickness)
-                breakHighDrawn := true
 
+            // Upper breakout: first confirmed close
+            if barstate.isconfirmed and not upperBreakDrawn and not upperExtDrawn and close > rangeHigh
+                line.new(time_close, close, sessionEnd, close,
+                     xloc=xloc.bar_time, color=breakHighColor, width=lineWidth)
 
-            // --- LOWER SIDE MUTUAL EXCLUSION ---
-            // 1. Check real-time wick touch for Mid-Range line FIRST (x1 is set to current time of cross)
-            if not lowerExtDrawn and not breakLowDrawn and low <= lowerExtLevel
-                line.new(x1=time, y1=lowerExtLevel, x2=futureTime, y2=lowerExtLevel, xloc=xloc.bar_time, color=extLowColor, width=thickness, style=line.style_solid)
+                upperBreakDrawn := true
+
+            // Lower extension: wick touch takes priority
+            if not lowerExtDrawn and not lowerBreakDrawn and low <= lowerExtension
+                line.new(time, lowerExtension, sessionEnd, lowerExtension,
+                     xloc=xloc.bar_time, color=extLowColor, width=lineWidth)
+
                 lowerExtDrawn := true
 
-            // 2. Check confirmed candle close for Breakout Line SECOND
-            if barstate.isconfirmed and not breakLowDrawn and not lowerExtDrawn and close < minLow
-                line.new(x1=time_close, y1=close, x2=futureTime, y2=close, xloc=xloc.bar_time, color=breakLoColor, width=thickness)
-                breakLowDrawn := true
+            // Lower breakout: first confirmed close
+            if barstate.isconfirmed and not lowerBreakDrawn and not lowerExtDrawn and close < rangeLow
+                line.new(time_close, close, sessionEnd, close,
+                     xloc=xloc.bar_time, color=breakLowColor, width=lineWidth)
 
-        // Clear tracking values once past extension window limit
-        if (time >= futureTime)
-            maxHigh := na
-            minLow := na
+                lowerBreakDrawn := true
 
-    [maxHigh, minLow]
+        // Clear completed session levels
+        if time >= sessionEnd
+            rangeHigh := na
+            rangeLow := na
 
-// --- Execute Sessions and Capture Boundaries ---
-[nyHigh, nyLow]   = getOpeningRange(enableNY, "America/New_York", nyStartHour, nyStartMin, nyRangeMinutes, nyExtendMinutes, nyHighColor, nyLowColor, nyBreakHighColor, nyBreakLowColor, nyExtHighColor, nyExtLowColor, lineWidthInput)
-[ldnHigh, ldnLow] = getOpeningRange(enableLDN, "Europe/London", ldnStartHour, ldnStartMin, ldnRangeMinutes, ldnExtendMinutes, ldnHighColor, ldnLowColor, ldnBreakHighColor, ldnBreakLowColor, ldnExtHighColor, ldnExtLowColor, lineWidthInput)
-[tkoHigh, tkoLow] = getOpeningRange(enableTKO, "Asia/Tokyo", tkoStartHour, tkoStartMin, tkoRangeMinutes, tkoExtendMinutes, tkoHighColor, tkoLowColor, tkoBreakHighColor, tkoBreakLowColor, tkoExtHighColor, tkoExtLowColor, lineWidthInput)
+// ─────────────────────────────────────────────────────────────
+// EXECUTE SESSIONS
+// ─────────────────────────────────────────────────────────────
+processSession(
+     nyEnabled, "America/New_York",
+     nyHour, nyMinute, nyRange, nyExtension,
+     nyHighColor, nyLowColor,
+     nyBreakHighColor, nyBreakLowColor,
+     nyExtHighColor, nyExtLowColor)
+
+processSession(
+     ldnEnabled, "Europe/London",
+     ldnHour, ldnMinute, ldnRange, ldnExtension,
+     ldnHighColor, ldnLowColor,
+     ldnBreakHighColor, ldnBreakLowColor,
+     ldnExtHighColor, ldnExtLowColor)
+
+processSession(
+     tkoEnabled, "Asia/Tokyo",
+     tkoHour, tkoMinute, tkoRange, tkoExtension,
+     tkoHighColor, tkoLowColor,
+     tkoBreakHighColor, tkoBreakLowColor,
+     tkoExtHighColor, tkoExtLowColor)
