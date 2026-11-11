@@ -1,5 +1,4 @@
-
- //@version=6
+//@version=6
 indicator("Multi-Session Opening Range", overlay=true, max_lines_count=500)
 
 // ─────────────────────────────────────────────────────────────
