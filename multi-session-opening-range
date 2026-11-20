@@ -7,8 +7,13 @@ indicator("Multi-Session Opening Range", overlay=true, max_lines_count=500)
 
 const string GLOBAL = "Global Settings"
 
-lineWidth = input.int(1, "Line Thickness", minval=1, group=GLOBAL)
+lineWidth = input.int(2, "Line Thickness", minval=1, group=GLOBAL)
 continuationTicks = input.int(50, "Continuation Target (Ticks)", minval=1, group=GLOBAL)
+
+showOpeningRange = input.bool(true, "Show Opening Range Lines", group=GLOBAL)
+showBreakouts = input.bool(false, "Show Breakout Lines", group=GLOBAL)
+showContinuations = input.bool(true, "Show Continuation Lines", group=GLOBAL)
+
 upperContinuationColor = input.color(color.blue, "Upper Continuation Color", group=GLOBAL)
 lowerContinuationColor = input.color(color.red, "Lower Continuation Color", group=GLOBAL)
 
@@ -87,9 +92,6 @@ processSession(
     var int lastSession = na
     var int rangeBars = 0
 
-    bool upperSignal = false
-    bool lowerSignal = false
-
     if enabled and array.size(times) > 0
         for i = 0 to array.size(times) - 1
             int barTime = array.get(times, i)
@@ -131,32 +133,33 @@ processSession(
                     rangeBars += 1
 
                     if barClose == rangeEnd and rangeBars == rangeMinutes
-                        drawLine(startTime, sessionEnd, rangeHigh, highColor)
-                        drawLine(startTime, sessionEnd, rangeLow, lowColor)
+                        if showOpeningRange
+                            drawLine(startTime, sessionEnd, rangeHigh, highColor)
+                            drawLine(startTime, sessionEnd, rangeLow, lowColor)
                         rangeDrawn := true
 
                 if rangeDrawn and inExtension
                     if not na(upperTarget) and barPrice >= upperTarget
-                        drawLine(barClose, sessionEnd, upperTarget, upperContinuationColor)
+                        if showContinuations
+                            drawLine(barClose, sessionEnd, upperTarget, upperContinuationColor)
                         upperTarget := na
-                        upperSignal := true
 
                     if not na(lowerTarget) and barPrice <= lowerTarget
-                        drawLine(barClose, sessionEnd, lowerTarget, lowerContinuationColor)
+                        if showContinuations
+                            drawLine(barClose, sessionEnd, lowerTarget, lowerContinuationColor)
                         lowerTarget := na
-                        lowerSignal := true
 
                     if not upperBreakDrawn and barPrice > rangeHigh
-                        drawLine(barClose, sessionEnd, barPrice, breakHighColor)
+                        if showBreakouts
+                            drawLine(barClose, sessionEnd, barPrice, breakHighColor)
                         upperTarget := continuationLevel(rangeHigh, barPrice, true)
                         upperBreakDrawn := true
 
                     if not lowerBreakDrawn and barPrice < rangeLow
-                        drawLine(barClose, sessionEnd, barPrice, breakLowColor)
+                        if showBreakouts
+                            drawLine(barClose, sessionEnd, barPrice, breakLowColor)
                         lowerTarget := continuationLevel(rangeLow, barPrice, false)
                         lowerBreakDrawn := true
-
-    [upperSignal, lowerSignal]
 
 // ─────────────────────────────────────────────────────────────
 // 5. SESSION EXECUTION
@@ -193,34 +196,21 @@ if subMinute
         array.push(lows, minuteLow)
         array.push(prices, minutePrice)
 
-bool upperAlert = false
-bool lowerAlert = false
-
 if barstate.isconfirmed
-    [nyUpper, nyLower] = processSession(
+    processSession(
         nyEnabled, "America/New_York", nyHour, nyMinute,
         nyRange, nyExtension, nyHighColor, nyLowColor,
         nyBreakHighColor, nyBreakLowColor,
         times, closes, highs, lows, prices)
 
-    [ldnUpper, ldnLower] = processSession(
+    processSession(
         ldnEnabled, "Europe/London", ldnHour, ldnMinute,
         ldnRange, ldnExtension, ldnHighColor, ldnLowColor,
         ldnBreakHighColor, ldnBreakLowColor,
         times, closes, highs, lows, prices)
 
-    [tkoUpper, tkoLower] = processSession(
+    processSession(
         tkoEnabled, "Asia/Tokyo", tkoHour, tkoMinute,
         tkoRange, tkoExtension, tkoHighColor, tkoLowColor,
         tkoBreakHighColor, tkoBreakLowColor,
         times, closes, highs, lows, prices)
-
-    upperAlert := nyUpper or ldnUpper or tkoUpper
-    lowerAlert := nyLower or ldnLower or tkoLower
-
-// ─────────────────────────────────────────────────────────────
-// 6. ALERTS
-// ─────────────────────────────────────────────────────────────
-
-alertcondition(upperAlert, "Upper Continuation", "BUY {{ticker}}")
-alertcondition(lowerAlert, "Lower Continuation", "SELL {{ticker}}")
