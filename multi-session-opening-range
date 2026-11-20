@@ -105,6 +105,7 @@ processSession(
 
         bool newSession = time >= startTime and (na(time[1]) or time[1] < startTime)
         bool inRange = time >= startTime and time < rangeEnd
+        bool rangeComplete = inRange and time_close >= rangeEnd
         bool inExtension = time >= rangeEnd and time_close <= sessionEnd
 
         // Reset
@@ -123,12 +124,13 @@ processSession(
             rangeHigh := na(rangeHigh) ? high : math.max(rangeHigh, high)
             rangeLow := na(rangeLow) ? low : math.min(rangeLow, low)
 
-        // Range Lines
-        if barstate.isconfirmed and not rangeDrawn and inExtension and not na(rangeHigh)
+        // Finalize Opening Range
+        if barstate.isconfirmed and rangeComplete and not rangeDrawn and not na(rangeHigh)
             drawLine(startTime, sessionEnd, rangeHigh, highColor)
             drawLine(startTime, sessionEnd, rangeLow, lowColor)
             rangeDrawn := true
 
+        // Breakouts and Continuations
         if barstate.isconfirmed and rangeDrawn and inExtension
             bool upperTriggered = not upperBreakDrawn and close > rangeHigh
             bool lowerTriggered = not lowerBreakDrawn and close < rangeLow
