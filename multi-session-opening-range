@@ -10,8 +10,8 @@ const string GLOBAL = "Global Settings"
 
 lineWidth = input.int(1, "Line Thickness", minval=1, group=GLOBAL)
 continuationTicks = input.int(50, "Continuation Target (Ticks)", minval=1, group=GLOBAL)
-continuationColor = input.color(color.silver, "Continuation Line Color", group=GLOBAL)
-firstContinuationOnly = input.bool(true, "Only First Continuation Line", group=GLOBAL)
+upperContinuationColor = input.color(color.blue, "Upper Continuation Color", group=GLOBAL)
+lowerContinuationColor = input.color(color.red, "Lower Continuation Color", group=GLOBAL)
 
 
 // ─────────────────────────────────────────────────────────────
@@ -26,10 +26,10 @@ nyHour = input.int(9, "Start Hour", minval=0, maxval=23, group=NY)
 nyMinute = input.int(27, "Start Minute", minval=0, maxval=59, group=NY)
 nyRange = input.int(3, "Opening Range (Minutes)", minval=1, group=NY)
 nyExtension = input.int(393, "Extension Time (Minutes)", minval=1, group=NY)
-nyHighColor = input.color(color.blue, "High Line Color", group=NY)
-nyLowColor = input.color(color.red, "Low Line Color", group=NY)
-nyBreakHighColor = input.color(color.blue, "Upper Breakout Color", group=NY)
-nyBreakLowColor = input.color(color.red, "Lower Breakout Color", group=NY)
+nyHighColor = input.color(#666666, "High Line Color", group=NY)
+nyLowColor = input.color(#666666, "Low Line Color", group=NY)
+nyBreakHighColor = input.color(#666666, "Upper Breakout Color", group=NY)
+nyBreakLowColor = input.color(#666666, "Lower Breakout Color", group=NY)
 
 // London
 const string LDN = "London Session"
@@ -39,10 +39,10 @@ ldnHour = input.int(8, "Start Hour", minval=0, maxval=23, group=LDN)
 ldnMinute = input.int(27, "Start Minute", minval=0, maxval=59, group=LDN)
 ldnRange = input.int(3, "Opening Range (Minutes)", minval=1, group=LDN)
 ldnExtension = input.int(300, "Extension Time (Minutes)", minval=1, group=LDN)
-ldnHighColor = input.color(color.blue, "High Line Color", group=LDN)
-ldnLowColor = input.color(color.red, "Low Line Color", group=LDN)
-ldnBreakHighColor = input.color(color.blue, "Upper Breakout Color", group=LDN)
-ldnBreakLowColor = input.color(color.red, "Lower Breakout Color", group=LDN)
+ldnHighColor = input.color(#666666, "High Line Color", group=LDN)
+ldnLowColor = input.color(#666666, "Low Line Color", group=LDN)
+ldnBreakHighColor = input.color(#666666, "Upper Breakout Color", group=LDN)
+ldnBreakLowColor = input.color(#666666, "Lower Breakout Color", group=LDN)
 
 // Tokyo
 const string TKO = "Tokyo Session"
@@ -52,10 +52,10 @@ tkoHour = input.int(8, "Start Hour", minval=0, maxval=23, group=TKO)
 tkoMinute = input.int(57, "Start Minute", minval=0, maxval=59, group=TKO)
 tkoRange = input.int(3, "Opening Range (Minutes)", minval=1, group=TKO)
 tkoExtension = input.int(362, "Extension Time (Minutes)", minval=1, group=TKO)
-tkoHighColor = input.color(color.blue, "High Line Color", group=TKO)
-tkoLowColor = input.color(color.red, "Low Line Color", group=TKO)
-tkoBreakHighColor = input.color(color.blue, "Upper Breakout Color", group=TKO)
-tkoBreakLowColor = input.color(color.red, "Lower Breakout Color", group=TKO)
+tkoHighColor = input.color(#666666, "High Line Color", group=TKO)
+tkoLowColor = input.color(#666666, "Low Line Color", group=TKO)
+tkoBreakHighColor = input.color(#666666, "Upper Breakout Color", group=TKO)
+tkoBreakLowColor = input.color(#666666, "Lower Breakout Color", group=TKO)
 
 
 // ─────────────────────────────────────────────────────────────
@@ -96,7 +96,6 @@ processSession(
     var bool rangeDrawn = false
     var bool upperBreakDrawn = false
     var bool lowerBreakDrawn = false
-    var bool continuationDrawn = false
 
     if enabled
         int startTime = timestamp(timezone, year(time, timezone), month(time, timezone), dayofmonth(time, timezone), startHour, startMinute)
@@ -117,7 +116,6 @@ processSession(
             rangeDrawn := false
             upperBreakDrawn := false
             lowerBreakDrawn := false
-            continuationDrawn := false
 
         // Opening Range
         if inRange
@@ -136,15 +134,13 @@ processSession(
             bool lowerTriggered = not lowerBreakDrawn and close < rangeLow
 
             // Continuation
-            if not na(upperTarget) and close >= upperTarget and (not firstContinuationOnly or not continuationDrawn)
-                drawLine(time, sessionEnd, upperTarget, continuationColor)
+            if not na(upperTarget) and close >= upperTarget
+                drawLine(time, sessionEnd, upperTarget, upperContinuationColor)
                 upperTarget := na
-                continuationDrawn := true
 
-            if not na(lowerTarget) and close <= lowerTarget and (not firstContinuationOnly or not continuationDrawn)
-                drawLine(time, sessionEnd, lowerTarget, continuationColor)
+            if not na(lowerTarget) and close <= lowerTarget
+                drawLine(time, sessionEnd, lowerTarget, lowerContinuationColor)
                 lowerTarget := na
-                continuationDrawn := true
 
             // Breakouts
             if upperTriggered
