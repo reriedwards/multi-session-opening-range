@@ -12,12 +12,10 @@ continuationTicks = input.int(50, "Continuation Target (Ticks)", minval=1, group
 upperContinuationColor = input.color(color.blue, "Upper Continuation Color", group=GLOBAL)
 lowerContinuationColor = input.color(color.red, "Lower Continuation Color", group=GLOBAL)
 
-
 // ─────────────────────────────────────────────────────────────
 // 2. SESSION SETTINGS
 // ─────────────────────────────────────────────────────────────
 
-// New York
 const string NY = "New York Session"
 
 nyEnabled = input.bool(true, "Enable Session", group=NY)
@@ -30,7 +28,6 @@ nyLowColor = input.color(#666666, "Low Line Color", group=NY)
 nyBreakHighColor = input.color(#666666, "Upper Breakout Color", group=NY)
 nyBreakLowColor = input.color(#666666, "Lower Breakout Color", group=NY)
 
-// London
 const string LDN = "London Session"
 
 ldnEnabled = input.bool(false, "Enable Session", group=LDN)
@@ -43,7 +40,6 @@ ldnLowColor = input.color(#666666, "Low Line Color", group=LDN)
 ldnBreakHighColor = input.color(#666666, "Upper Breakout Color", group=LDN)
 ldnBreakLowColor = input.color(#666666, "Lower Breakout Color", group=LDN)
 
-// Tokyo
 const string TKO = "Tokyo Session"
 
 tkoEnabled = input.bool(true, "Enable Session", group=TKO)
@@ -56,7 +52,6 @@ tkoLowColor = input.color(#666666, "Low Line Color", group=TKO)
 tkoBreakHighColor = input.color(#666666, "Upper Breakout Color", group=TKO)
 tkoBreakLowColor = input.color(#666666, "Lower Breakout Color", group=TKO)
 
-
 // ─────────────────────────────────────────────────────────────
 // 3. DRAWING HELPERS
 // ─────────────────────────────────────────────────────────────
@@ -66,16 +61,8 @@ drawLine(int fromTime, int toTime, float price, color lineColor) =>
 
 continuationLevel(float boundary, float breakoutPrice, bool upper) =>
     float remaining = continuationTicks * syminfo.mintick - math.abs(breakoutPrice - boundary)
-    float level = na
-
-    if remaining > 0
-        float candidate = math.round_to_mintick(breakoutPrice + (upper ? remaining / 2 : -remaining / 2))
-
-        if math.abs(candidate - breakoutPrice) >= syminfo.mintick
-            level := candidate
-
-    level
-
+    float candidate = math.round_to_mintick(breakoutPrice + (upper ? remaining / 2 : -remaining / 2))
+    remaining > 0 and math.abs(candidate - breakoutPrice) >= syminfo.mintick ? candidate : na
 
 // ─────────────────────────────────────────────────────────────
 // 4. SESSION LOGIC
@@ -84,9 +71,10 @@ continuationLevel(float boundary, float breakoutPrice, bool upper) =>
 processSession(
     bool enabled, string timezone, int startHour, int startMinute,
     int rangeMinutes, int extensionMinutes, color highColor,
-    color lowColor, color breakHighColor, color breakLowColor) =>
+    color lowColor, color breakHighColor, color breakLowColor,
+    array<int> times, array<int> closes,
+    array<float> highs, array<float> lows, array<float> prices) =>
 
-    // Session State
     var float rangeHigh = na
     var float rangeLow = na
     var float upperTarget = na
@@ -95,112 +83,144 @@ processSession(
     var bool rangeDrawn = false
     var bool upperBreakDrawn = false
     var bool lowerBreakDrawn = false
-    var bool upperContinuationDrawn = false
-    var bool lowerContinuationDrawn = false
+    var int lastProcessed = na
+    var int lastSession = na
+    var int rangeBars = 0
 
-    varip bool upperContinuationHit = false
-    varip bool lowerContinuationHit = false
-    varip int upperHitTime = na
-    varip int lowerHitTime = na
+    bool upperSignal = false
+    bool lowerSignal = false
 
-    if enabled
-        int startTime = timestamp(timezone, year(time, timezone), month(time, timezone), dayofmonth(time, timezone), startHour, startMinute)
-        int rangeEnd = startTime + rangeMinutes * 60000
-        int sessionEnd = startTime + extensionMinutes * 60000
+    if enabled and array.size(times) > 0
+        for i = 0 to array.size(times) - 1
+            int barTime = array.get(times, i)
+            int barClose = array.get(closes, i)
+            float barHigh = array.get(highs, i)
+            float barLow = array.get(lows, i)
+            float barPrice = array.get(prices, i)
 
-        bool newSession = time >= startTime and (na(time[1]) or time[1] < startTime)
-        bool inRange = time >= startTime and time < rangeEnd
-        bool rangeComplete = inRange and time_close >= rangeEnd
-        bool inExtension = time >= rangeEnd and time_close <= sessionEnd
+            if not na(barTime) and not na(barClose) and (na(lastProcessed) or barTime > lastProcessed)
+                lastProcessed := barTime
 
-        // Reset
-        if newSession
-            rangeHigh := na
-            rangeLow := na
-            upperTarget := na
-            lowerTarget := na
-            rangeDrawn := false
-            upperBreakDrawn := false
-            lowerBreakDrawn := false
-            upperContinuationDrawn := false
-            lowerContinuationDrawn := false
-            upperContinuationHit := false
-            lowerContinuationHit := false
-            upperHitTime := na
-            lowerHitTime := na
+                int startTime = timestamp(
+                    timezone,
+                    year(barTime, timezone),
+                    month(barTime, timezone),
+                    dayofmonth(barTime, timezone),
+                    startHour, startMinute)
 
-        // Opening Range
-        if inRange
-            rangeHigh := na(rangeHigh) ? high : math.max(rangeHigh, high)
-            rangeLow := na(rangeLow) ? low : math.min(rangeLow, low)
+                int rangeEnd = startTime + rangeMinutes * 60000
+                int sessionEnd = startTime + extensionMinutes * 60000
 
-        // Finalize Opening Range
-        if barstate.isconfirmed and rangeComplete and not rangeDrawn and not na(rangeHigh)
-            drawLine(startTime, sessionEnd, rangeHigh, highColor)
-            drawLine(startTime, sessionEnd, rangeLow, lowColor)
-            rangeDrawn := true
+                bool inRange = barTime >= startTime and barClose <= rangeEnd
+                bool inExtension = barTime >= rangeEnd and barClose <= sessionEnd
 
-        // Continuations: Intrabar Detection
-        if rangeDrawn and inExtension
-            if not upperContinuationHit and not na(upperTarget) and high >= upperTarget
-                upperContinuationHit := true
-                upperHitTime := time
-
-            if not lowerContinuationHit and not na(lowerTarget) and low <= lowerTarget
-                lowerContinuationHit := true
-                lowerHitTime := time
-
-        // Continuations: Persistent Drawing
-        if rangeDrawn and inExtension
-            if upperContinuationHit and not upperContinuationDrawn and not na(upperTarget)
-                drawLine(upperHitTime, sessionEnd, upperTarget, upperContinuationColor)
-
-                if barstate.isconfirmed
-                    upperContinuationDrawn := true
+                if barTime >= startTime and (na(lastSession) or startTime != lastSession)
+                    lastSession := startTime
+                    rangeHigh := na
+                    rangeLow := na
                     upperTarget := na
-
-            if lowerContinuationHit and not lowerContinuationDrawn and not na(lowerTarget)
-                drawLine(lowerHitTime, sessionEnd, lowerTarget, lowerContinuationColor)
-
-                if barstate.isconfirmed
-                    lowerContinuationDrawn := true
                     lowerTarget := na
+                    rangeDrawn := false
+                    upperBreakDrawn := false
+                    lowerBreakDrawn := false
+                    rangeBars := 0
 
-        // Breakouts: Confirmed Candle Close
-        if barstate.isconfirmed and rangeDrawn and inExtension
-            if not upperBreakDrawn and close > rangeHigh
-                drawLine(time_close, sessionEnd, close, breakHighColor)
-                upperTarget := continuationLevel(rangeHigh, close, true)
-                upperBreakDrawn := true
+                if inRange
+                    rangeHigh := na(rangeHigh) ? barHigh : math.max(rangeHigh, barHigh)
+                    rangeLow := na(rangeLow) ? barLow : math.min(rangeLow, barLow)
+                    rangeBars += 1
 
-            if not lowerBreakDrawn and close < rangeLow
-                drawLine(time_close, sessionEnd, close, breakLowColor)
-                lowerTarget := continuationLevel(rangeLow, close, false)
-                lowerBreakDrawn := true
+                    if barClose == rangeEnd and rangeBars == rangeMinutes
+                        drawLine(startTime, sessionEnd, rangeHigh, highColor)
+                        drawLine(startTime, sessionEnd, rangeLow, lowColor)
+                        rangeDrawn := true
 
-        // Cleanup
-        if time >= sessionEnd
-            rangeHigh := na
-            rangeLow := na
-            upperTarget := na
-            lowerTarget := na
+                if rangeDrawn and inExtension
+                    if not na(upperTarget) and barPrice >= upperTarget
+                        drawLine(barClose, sessionEnd, upperTarget, upperContinuationColor)
+                        upperTarget := na
+                        upperSignal := true
 
+                    if not na(lowerTarget) and barPrice <= lowerTarget
+                        drawLine(barClose, sessionEnd, lowerTarget, lowerContinuationColor)
+                        lowerTarget := na
+                        lowerSignal := true
+
+                    if not upperBreakDrawn and barPrice > rangeHigh
+                        drawLine(barClose, sessionEnd, barPrice, breakHighColor)
+                        upperTarget := continuationLevel(rangeHigh, barPrice, true)
+                        upperBreakDrawn := true
+
+                    if not lowerBreakDrawn and barPrice < rangeLow
+                        drawLine(barClose, sessionEnd, barPrice, breakLowColor)
+                        lowerTarget := continuationLevel(rangeLow, barPrice, false)
+                        lowerBreakDrawn := true
+
+    [upperSignal, lowerSignal]
 
 // ─────────────────────────────────────────────────────────────
 // 5. SESSION EXECUTION
 // ─────────────────────────────────────────────────────────────
 
-processSession(
-    nyEnabled, "America/New_York", nyHour, nyMinute,
-    nyRange, nyExtension, nyHighColor, nyLowColor,
-    nyBreakHighColor, nyBreakLowColor)
+[minuteTimes, minuteCloses, minuteHighs, minuteLows, minutePrices] = request.security_lower_tf(
+    syminfo.tickerid, "1",
+    [time, time_close, high, low, close])
 
-processSession(
-    ldnEnabled, "Europe/London", ldnHour, ldnMinute,
-    ldnRange, ldnExtension, ldnHighColor, ldnLowColor,
-    ldnBreakHighColor, ldnBreakLowColor)
+[minuteTime, minuteClose, minuteHigh, minuteLow, minutePrice] = request.security(
+    syminfo.tickerid, "1",
+    [time, time_close, high, low, close],
+    lookahead=barmerge.lookahead_off)
 
-processSession(
-    tkoEnabled, "Asia/Tokyo", tkoHour, tkoMinute,
-    tkoRange, tkoExtension, tkoHighColor, tkoLowColor,
-    tkoBreakHighColor, tkoBreakLowColor)
+bool subMinute = timeframe.in_seconds() < 60
+
+array<int> times = minuteTimes
+array<int> closes = minuteCloses
+array<float> highs = minuteHighs
+array<float> lows = minuteLows
+array<float> prices = minutePrices
+
+if subMinute
+    times := array.new_int()
+    closes := array.new_int()
+    highs := array.new_float()
+    lows := array.new_float()
+    prices := array.new_float()
+
+    if not na(minuteClose) and minuteClose <= time_close
+        array.push(times, minuteTime)
+        array.push(closes, minuteClose)
+        array.push(highs, minuteHigh)
+        array.push(lows, minuteLow)
+        array.push(prices, minutePrice)
+
+bool upperAlert = false
+bool lowerAlert = false
+
+if barstate.isconfirmed
+    [nyUpper, nyLower] = processSession(
+        nyEnabled, "America/New_York", nyHour, nyMinute,
+        nyRange, nyExtension, nyHighColor, nyLowColor,
+        nyBreakHighColor, nyBreakLowColor,
+        times, closes, highs, lows, prices)
+
+    [ldnUpper, ldnLower] = processSession(
+        ldnEnabled, "Europe/London", ldnHour, ldnMinute,
+        ldnRange, ldnExtension, ldnHighColor, ldnLowColor,
+        ldnBreakHighColor, ldnBreakLowColor,
+        times, closes, highs, lows, prices)
+
+    [tkoUpper, tkoLower] = processSession(
+        tkoEnabled, "Asia/Tokyo", tkoHour, tkoMinute,
+        tkoRange, tkoExtension, tkoHighColor, tkoLowColor,
+        tkoBreakHighColor, tkoBreakLowColor,
+        times, closes, highs, lows, prices)
+
+    upperAlert := nyUpper or ldnUpper or tkoUpper
+    lowerAlert := nyLower or ldnLower or tkoLower
+
+// ─────────────────────────────────────────────────────────────
+// 6. ALERTS
+// ─────────────────────────────────────────────────────────────
+
+alertcondition(upperAlert, "Upper Continuation", "BUY {{ticker}}")
+alertcondition(lowerAlert, "Lower Continuation", "SELL {{ticker}}")
