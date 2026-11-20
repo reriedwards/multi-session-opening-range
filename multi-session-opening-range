@@ -96,9 +96,13 @@ processSession(
     var bool rangeDrawn = false
     var bool upperBreakDrawn = false
     var bool lowerBreakDrawn = false
+    var bool upperContinuationDrawn = false
+    var bool lowerContinuationDrawn = false
 
     varip bool upperContinuationHit = false
     varip bool lowerContinuationHit = false
+    varip int upperHitTime = na
+    varip int lowerHitTime = na
 
     if enabled
         int startTime = timestamp(timezone, year(time, timezone), month(time, timezone), dayofmonth(time, timezone), startHour, startMinute)
@@ -119,8 +123,12 @@ processSession(
             rangeDrawn := false
             upperBreakDrawn := false
             lowerBreakDrawn := false
+            upperContinuationDrawn := false
+            lowerContinuationDrawn := false
             upperContinuationHit := false
             lowerContinuationHit := false
+            upperHitTime := na
+            lowerHitTime := na
 
         // Opening Range
         if inRange
@@ -133,17 +141,31 @@ processSession(
             drawLine(startTime, sessionEnd, rangeLow, lowColor)
             rangeDrawn := true
 
-        // Continuations: Intrabar
+        // Continuations: Intrabar Detection
         if rangeDrawn and inExtension
             if not upperContinuationHit and not na(upperTarget) and high >= upperTarget
-                drawLine(time, sessionEnd, upperTarget, upperContinuationColor)
                 upperContinuationHit := true
-                upperTarget := na
+                upperHitTime := time
 
             if not lowerContinuationHit and not na(lowerTarget) and low <= lowerTarget
-                drawLine(time, sessionEnd, lowerTarget, lowerContinuationColor)
                 lowerContinuationHit := true
-                lowerTarget := na
+                lowerHitTime := time
+
+        // Continuations: Persistent Drawing
+        if rangeDrawn and inExtension
+            if upperContinuationHit and not upperContinuationDrawn and not na(upperTarget)
+                drawLine(upperHitTime, sessionEnd, upperTarget, upperContinuationColor)
+
+                if barstate.isconfirmed
+                    upperContinuationDrawn := true
+                    upperTarget := na
+
+            if lowerContinuationHit and not lowerContinuationDrawn and not na(lowerTarget)
+                drawLine(lowerHitTime, sessionEnd, lowerTarget, lowerContinuationColor)
+
+                if barstate.isconfirmed
+                    lowerContinuationDrawn := true
+                    lowerTarget := na
 
         // Breakouts: Confirmed Candle Close
         if barstate.isconfirmed and rangeDrawn and inExtension
