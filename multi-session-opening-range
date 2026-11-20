@@ -97,6 +97,9 @@ processSession(
     var bool upperBreakDrawn = false
     var bool lowerBreakDrawn = false
 
+    varip bool upperContinuationHit = false
+    varip bool lowerContinuationHit = false
+
     if enabled
         int startTime = timestamp(timezone, year(time, timezone), month(time, timezone), dayofmonth(time, timezone), startHour, startMinute)
         int rangeEnd = startTime + rangeMinutes * 60000
@@ -116,6 +119,8 @@ processSession(
             rangeDrawn := false
             upperBreakDrawn := false
             lowerBreakDrawn := false
+            upperContinuationHit := false
+            lowerContinuationHit := false
 
         // Opening Range
         if inRange
@@ -128,27 +133,26 @@ processSession(
             drawLine(startTime, sessionEnd, rangeLow, lowColor)
             rangeDrawn := true
 
-        // Breakouts and Continuations
-        if barstate.isconfirmed and rangeDrawn and inExtension
-            bool upperTriggered = not upperBreakDrawn and close > rangeHigh
-            bool lowerTriggered = not lowerBreakDrawn and close < rangeLow
-
-            // Continuation
-            if not na(upperTarget) and close >= upperTarget
+        // Continuations: Intrabar
+        if rangeDrawn and inExtension
+            if not upperContinuationHit and not na(upperTarget) and high >= upperTarget
                 drawLine(time, sessionEnd, upperTarget, upperContinuationColor)
+                upperContinuationHit := true
                 upperTarget := na
 
-            if not na(lowerTarget) and close <= lowerTarget
+            if not lowerContinuationHit and not na(lowerTarget) and low <= lowerTarget
                 drawLine(time, sessionEnd, lowerTarget, lowerContinuationColor)
+                lowerContinuationHit := true
                 lowerTarget := na
 
-            // Breakouts
-            if upperTriggered
+        // Breakouts: Confirmed Candle Close
+        if barstate.isconfirmed and rangeDrawn and inExtension
+            if not upperBreakDrawn and close > rangeHigh
                 drawLine(time_close, sessionEnd, close, breakHighColor)
                 upperTarget := continuationLevel(rangeHigh, close, true)
                 upperBreakDrawn := true
 
-            if lowerTriggered
+            if not lowerBreakDrawn and close < rangeLow
                 drawLine(time_close, sessionEnd, close, breakLowColor)
                 lowerTarget := continuationLevel(rangeLow, close, false)
                 lowerBreakDrawn := true
