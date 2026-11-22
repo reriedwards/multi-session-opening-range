@@ -1,4 +1,3 @@
-
 // @version=6
 indicator("Multi-Session Opening Range", overlay=true, max_lines_count=500, max_boxes_count=500)
 
@@ -16,11 +15,11 @@ bandTicks = input.int(50, "Band Width (Ticks)", minval=1, group=BANDS)
 
 showBullishBand = input.bool(true, "Show Bullish Band", group=BANDS)
 bullishBandLineColor = input.color(#2196F3, "Bullish Band Line Color", group=BANDS)
-bullishBandFillColor = input.color(color.new(#2196F3, 90), "Bullish Band Fill Color", group=BANDS)
+bullishBandFillColor = input.color(color.new(#2196F3, 100), "Bullish Band Fill Color", group=BANDS)
 
 showBearishBand = input.bool(true, "Show Bearish Band", group=BANDS)
 bearishBandLineColor = input.color(#F23645, "Bearish Band Line Color", group=BANDS)
-bearishBandFillColor = input.color(color.new(#F23645, 90), "Bearish Band Fill Color", group=BANDS)
+bearishBandFillColor = input.color(color.new(#F23645, 100), "Bearish Band Fill Color", group=BANDS)
 
 // New York Session
 const string NY = "New York Session"
@@ -30,8 +29,8 @@ nyHour = input.int(9, "Start Hour", minval=0, maxval=23, group=NY)
 nyMinute = input.int(27, "Start Minute", minval=0, maxval=59, group=NY)
 nyRange = input.int(3, "Opening Range (Minutes)", minval=1, group=NY)
 nyExtension = input.int(392, "Extension Time (Minutes)", minval=1, group=NY)
-nyHighColor = input.color(#2196F3, "High Line Color", group=NY)
-nyLowColor = input.color(#F23645, "Low Line Color", group=NY)
+nyHighColor = input.color(color.new(#2196F3, 100), "High Line Color", group=NY)
+nyLowColor = input.color(color.new(#F23645, 100), "Low Line Color", group=NY)
 
 // London Session
 const string LDN = "London Session"
@@ -41,8 +40,8 @@ ldnHour = input.int(8, "Start Hour", minval=0, maxval=23, group=LDN)
 ldnMinute = input.int(27, "Start Minute", minval=0, maxval=59, group=LDN)
 ldnRange = input.int(3, "Opening Range (Minutes)", minval=1, group=LDN)
 ldnExtension = input.int(300, "Extension Time (Minutes)", minval=1, group=LDN)
-ldnHighColor = input.color(#2196F3, "High Line Color", group=LDN)
-ldnLowColor = input.color(#F23645, "Low Line Color", group=LDN)
+ldnHighColor = input.color(color.new(#2196F3, 100), "High Line Color", group=LDN)
+ldnLowColor = input.color(color.new(#F23645, 100), "Low Line Color", group=LDN)
 
 // Tokyo Session
 const string TKO = "Tokyo Session"
@@ -52,8 +51,8 @@ tkoHour = input.int(8, "Start Hour", minval=0, maxval=23, group=TKO)
 tkoMinute = input.int(57, "Start Minute", minval=0, maxval=59, group=TKO)
 tkoRange = input.int(3, "Opening Range (Minutes)", minval=1, group=TKO)
 tkoExtension = input.int(362, "Extension Time (Minutes)", minval=1, group=TKO)
-tkoHighColor = input.color(#2196F3, "High Line Color", group=TKO)
-tkoLowColor = input.color(#F23645, "Low Line Color", group=TKO)
+tkoHighColor = input.color(color.new(#2196F3, 100), "High Line Color", group=TKO)
+tkoLowColor = input.color(color.new(#F23645, 100), "Low Line Color", group=TKO)
 
 // Drawing Helpers
 drawLine(int fromTime, int toTime, float price, color lineColor) =>
