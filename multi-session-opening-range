@@ -8,19 +8,19 @@ const string GLOBAL = "Global Settings"
 lineWidth = input.int(1, "Line Thickness", minval=1, maxval=5, group=GLOBAL)
 showOpeningRange = input.bool(true, "Show Opening Range Lines", group=GLOBAL)
 
-// Stop Zones
-const string ZONES = "Stop Zones"
+// Bands
+const string BANDS = "Bands"
 
-stopZoneMode = input.string("Fixed", "Stop Zone Mode", options=["Fixed", "Dynamic"], group=ZONES)
-stopTicks = input.int(50, "Stop Zone Distance (Ticks)", minval=1, group=ZONES)
+bandMode = input.string("Fixed", "Band Mode", options=["Fixed", "Dynamic"], group=BANDS)
+bandTicks = input.int(50, "Band Width (Ticks)", minval=1, group=BANDS)
 
-showBullishZone = input.bool(true, "Show Bullish Stop Zone", group=ZONES)
-bullishLineColor = input.color(#2196F3, "Bullish Line Color", group=ZONES)
-bullishBackground = input.color(color.new(#2196F3, 90), "Bullish Background Color", group=ZONES)
+showBullishBand = input.bool(true, "Show Bullish Band", group=BANDS)
+bullishBandLineColor = input.color(#2196F3, "Bullish Band Line Color", group=BANDS)
+bullishBandFillColor = input.color(color.new(#2196F3, 90), "Bullish Band Fill Color", group=BANDS)
 
-showBearishZone = input.bool(true, "Show Bearish Stop Zone", group=ZONES)
-bearishLineColor = input.color(#F23645, "Bearish Line Color", group=ZONES)
-bearishBackground = input.color(color.new(#F23645, 90), "Bearish Background Color", group=ZONES)
+showBearishBand = input.bool(true, "Show Bearish Band", group=BANDS)
+bearishBandLineColor = input.color(#F23645, "Bearish Band Line Color", group=BANDS)
+bearishBandFillColor = input.color(color.new(#F23645, 90), "Bearish Band Fill Color", group=BANDS)
 
 // New York Session
 const string NY = "New York Session"
@@ -58,44 +58,44 @@ tkoLowColor = input.color(#F23645, "Low Line Color", group=TKO)
 // Drawing Helpers
 drawLine(int fromTime, int toTime, float price, color lineColor) =>
     line.new(
-         fromTime, price, toTime, price,
-         xloc=xloc.bar_time,
-         color=lineColor,
-         width=lineWidth)
+        fromTime, price, toTime, price,
+        xloc=xloc.bar_time,
+        color=lineColor,
+        width=lineWidth)
 
-drawZone(int fromTime, int toTime, float boundary, float outerPrice, bool bullish) =>
+drawBand(int fromTime, int toTime, float boundary, float outerPrice, bool bullish) =>
     box.new(
-         left=fromTime,
-         top=math.max(boundary, outerPrice),
-         right=toTime,
-         bottom=math.min(boundary, outerPrice),
-         xloc=xloc.bar_time,
-         border_color=na,
-         border_width=0,
-         bgcolor=bullish ? bullishBackground : bearishBackground)
+        left=fromTime,
+        top=math.max(boundary, outerPrice),
+        right=toTime,
+        bottom=math.min(boundary, outerPrice),
+        xloc=xloc.bar_time,
+        border_color=na,
+        border_width=0,
+        bgcolor=bullish ? bullishBandFillColor : bearishBandFillColor)
 
     drawLine(
-         fromTime, toTime, outerPrice,
-         bullish ? bullishLineColor : bearishLineColor)
+        fromTime, toTime, outerPrice,
+        bullish ? bullishBandLineColor : bearishBandLineColor)
 
 // Session Logic
 processSession(
-     bool enabled, string timezone,
-     int startHour, int startMinute,
-     int rangeMinutes, int extensionMinutes,
-     color highColor, color lowColor,
-     array<int> times, array<int> closes,
-     array<float> highs, array<float> lows,
-     int confirmedThrough) =>
+    bool enabled, string timezone,
+    int startHour, int startMinute,
+    int rangeMinutes, int extensionMinutes,
+    color highColor, color lowColor,
+    array<int> times, array<int> closes,
+    array<float> highs, array<float> lows,
+    int confirmedThrough) =>
 
     var float rangeHigh = na
     var float rangeLow = na
-    var float bullishLevel = na
-    var float bearishLevel = na
+    var float bullishBandLevel = na
+    var float bearishBandLevel = na
 
     var bool rangeReady = false
-    var bool bullishDrawn = false
-    var bool bearishDrawn = false
+    var bool bullishBandDrawn = false
+    var bool bearishBandDrawn = false
 
     var int lastSession = na
     var int lastProcessed = na
@@ -110,11 +110,11 @@ processSession(
 
             if not na(barTime) and not na(barClose) and not na(barHigh) and not na(barLow)
                 int startTime = timestamp(
-                     timezone,
-                     year(barTime, timezone),
-                     month(barTime, timezone),
-                     dayofmonth(barTime, timezone),
-                     startHour, startMinute)
+                    timezone,
+                    year(barTime, timezone),
+                    month(barTime, timezone),
+                    dayofmonth(barTime, timezone),
+                    startHour, startMinute)
 
                 int rangeEnd = startTime + rangeMinutes * 60000
                 int sessionEnd = startTime + extensionMinutes * 60000
@@ -126,11 +126,11 @@ processSession(
                     lastSession := startTime
                     rangeHigh := na
                     rangeLow := na
-                    bullishLevel := na
-                    bearishLevel := na
+                    bullishBandLevel := na
+                    bearishBandLevel := na
                     rangeReady := false
-                    bullishDrawn := false
-                    bearishDrawn := false
+                    bullishBandDrawn := false
+                    bearishBandDrawn := false
                     rangeBars := 0
 
                 if minuteConfirmed and newMinute
@@ -142,49 +142,49 @@ processSession(
                         rangeBars += 1
 
                         if not rangeReady and barClose == rangeEnd and rangeBars == rangeMinutes
-                            float distance = stopTicks * syminfo.mintick
+                            float bandWidth = bandTicks * syminfo.mintick
 
-                            bullishLevel := math.round_to_mintick(rangeHigh + distance)
-                            bearishLevel := math.round_to_mintick(rangeLow - distance)
+                            bullishBandLevel := math.round_to_mintick(rangeHigh + bandWidth)
+                            bearishBandLevel := math.round_to_mintick(rangeLow - bandWidth)
                             rangeReady := true
 
                             if showOpeningRange
                                 drawLine(startTime, sessionEnd, rangeHigh, highColor)
                                 drawLine(startTime, sessionEnd, rangeLow, lowColor)
 
-                            if stopZoneMode == "Fixed"
-                                if showBullishZone
-                                    drawZone(startTime, sessionEnd, rangeHigh, bullishLevel, true)
-                                    bullishDrawn := true
+                            if bandMode == "Fixed"
+                                if showBullishBand
+                                    drawBand(startTime, sessionEnd, rangeHigh, bullishBandLevel, true)
+                                    bullishBandDrawn := true
 
-                                if showBearishZone
-                                    drawZone(startTime, sessionEnd, rangeLow, bearishLevel, false)
-                                    bearishDrawn := true
+                                if showBearishBand
+                                    drawBand(startTime, sessionEnd, rangeLow, bearishBandLevel, false)
+                                    bearishBandDrawn := true
 
-                if stopZoneMode == "Dynamic" and rangeReady and barTime >= rangeEnd and barTime < sessionEnd
-                    if showBullishZone and not bullishDrawn and barHigh > bullishLevel
-                        drawZone(barTime, sessionEnd, rangeHigh, bullishLevel, true)
-                        bullishDrawn := true
+                if bandMode == "Dynamic" and rangeReady and barTime >= rangeEnd and barTime < sessionEnd
+                    if showBullishBand and not bullishBandDrawn and barHigh > bullishBandLevel
+                        drawBand(barTime, sessionEnd, rangeHigh, bullishBandLevel, true)
+                        bullishBandDrawn := true
 
-                    if showBearishZone and not bearishDrawn and barLow < bearishLevel
-                        drawZone(barTime, sessionEnd, rangeLow, bearishLevel, false)
-                        bearishDrawn := true
+                    if showBearishBand and not bearishBandDrawn and barLow < bearishBandLevel
+                        drawBand(barTime, sessionEnd, rangeLow, bearishBandLevel, false)
+                        bearishBandDrawn := true
 
 // One-Minute Data
 [lowerTimes, lowerCloses, lowerHighs, lowerLows] = request.security_lower_tf(
-     syminfo.tickerid, "1",
-     [time, time_close, high, low],
-     ignore_invalid_timeframe=true)
+    syminfo.tickerid, "1",
+    [time, time_close, high, low],
+    ignore_invalid_timeframe=true)
 
 [previousTime, previousClose, previousHigh, previousLow] = request.security(
-     syminfo.tickerid, "1",
-     [time[1], time_close[1], high[1], low[1]],
-     lookahead=barmerge.lookahead_on)
+    syminfo.tickerid, "1",
+    [time[1], time_close[1], high[1], low[1]],
+    lookahead=barmerge.lookahead_on)
 
 [currentTime, currentClose, currentHigh, currentLow] = request.security(
-     syminfo.tickerid, "1",
-     [time, time_close, high, low],
-     lookahead=barmerge.lookahead_off)
+    syminfo.tickerid, "1",
+    [time, time_close, high, low],
+    lookahead=barmerge.lookahead_off)
 
 int chartSeconds = timeframe.in_seconds()
 
@@ -226,19 +226,19 @@ else
 
 // Session Execution
 processSession(
-     nyEnabled, "America/New_York",
-     nyHour, nyMinute, nyRange, nyExtension,
-     nyHighColor, nyLowColor,
-     times, closes, highs, lows, confirmedThrough)
+    nyEnabled, "America/New_York",
+    nyHour, nyMinute, nyRange, nyExtension,
+    nyHighColor, nyLowColor,
+    times, closes, highs, lows, confirmedThrough)
 
 processSession(
-     ldnEnabled, "Europe/London",
-     ldnHour, ldnMinute, ldnRange, ldnExtension,
-     ldnHighColor, ldnLowColor,
-     times, closes, highs, lows, confirmedThrough)
+    ldnEnabled, "Europe/London",
+    ldnHour, ldnMinute, ldnRange, ldnExtension,
+    ldnHighColor, ldnLowColor,
+    times, closes, highs, lows, confirmedThrough)
 
 processSession(
-     tkoEnabled, "Asia/Tokyo",
-     tkoHour, tkoMinute, tkoRange, tkoExtension,
-     tkoHighColor, tkoLowColor,
-     times, closes, highs, lows, confirmedThrough)
+    tkoEnabled, "Asia/Tokyo",
+    tkoHour, tkoMinute, tkoRange, tkoExtension,
+    tkoHighColor, tkoLowColor,
+    times, closes, highs, lows, confirmedThrough)
