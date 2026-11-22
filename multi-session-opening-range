@@ -12,7 +12,7 @@ showOpeningRange = input.bool(true, "Show Opening Range Lines", group=GLOBAL)
 const string ZONES = "Stop Zones"
 
 stopZoneMode = input.string("Fixed", "Stop Zone Mode", options=["Fixed", "Dynamic"], group=ZONES)
-stopTicks = input.int(25, "Stop Zone Distance (Ticks)", minval=1, group=ZONES)
+stopTicks = input.int(50, "Stop Zone Distance (Ticks)", minval=1, group=ZONES)
 
 showBullishZone = input.bool(true, "Show Bullish Stop Zone", group=ZONES)
 bullishLineColor = input.color(#2196F3, "Bullish Line Color", group=ZONES)
