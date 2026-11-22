@@ -15,11 +15,11 @@ bandTicks = input.int(50, "Band Width (Ticks)", minval=1, group=BANDS)
 
 showBullishBand = input.bool(true, "Show Bullish Band", group=BANDS)
 bullishBandLineColor = input.color(#2196F3, "Bullish Band Line Color", group=BANDS)
-bullishBandFillColor = input.color(color.new(#2196F3, 100), "Bullish Band Fill Color", group=BANDS)
+bullishBandFillColor = input.color(color.new(#2196F3, 80), "Bullish Band Fill Color", group=BANDS)
 
 showBearishBand = input.bool(true, "Show Bearish Band", group=BANDS)
 bearishBandLineColor = input.color(#F23645, "Bearish Band Line Color", group=BANDS)
-bearishBandFillColor = input.color(color.new(#F23645, 100), "Bearish Band Fill Color", group=BANDS)
+bearishBandFillColor = input.color(color.new(#F23645, 80), "Bearish Band Fill Color", group=BANDS)
 
 // New York Session
 const string NY = "New York Session"
@@ -29,8 +29,8 @@ nyHour = input.int(9, "Start Hour", minval=0, maxval=23, group=NY)
 nyMinute = input.int(27, "Start Minute", minval=0, maxval=59, group=NY)
 nyRange = input.int(3, "Opening Range (Minutes)", minval=1, group=NY)
 nyExtension = input.int(392, "Extension Time (Minutes)", minval=1, group=NY)
-nyHighColor = input.color(color.new(#2196F3, 100), "High Line Color", group=NY)
-nyLowColor = input.color(color.new(#F23645, 100), "Low Line Color", group=NY)
+nyHighColor = input.color(#2196F3, "High Line Color", group=NY)
+nyLowColor = input.color(#F23645, "Low Line Color", group=NY)
 
 // London Session
 const string LDN = "London Session"
@@ -40,8 +40,8 @@ ldnHour = input.int(8, "Start Hour", minval=0, maxval=23, group=LDN)
 ldnMinute = input.int(27, "Start Minute", minval=0, maxval=59, group=LDN)
 ldnRange = input.int(3, "Opening Range (Minutes)", minval=1, group=LDN)
 ldnExtension = input.int(300, "Extension Time (Minutes)", minval=1, group=LDN)
-ldnHighColor = input.color(color.new(#2196F3, 100), "High Line Color", group=LDN)
-ldnLowColor = input.color(color.new(#F23645, 100), "Low Line Color", group=LDN)
+ldnHighColor = input.color(#2196F3, "High Line Color", group=LDN)
+ldnLowColor = input.color(#F23645, "Low Line Color", group=LDN)
 
 // Tokyo Session
 const string TKO = "Tokyo Session"
@@ -51,41 +51,41 @@ tkoHour = input.int(8, "Start Hour", minval=0, maxval=23, group=TKO)
 tkoMinute = input.int(57, "Start Minute", minval=0, maxval=59, group=TKO)
 tkoRange = input.int(3, "Opening Range (Minutes)", minval=1, group=TKO)
 tkoExtension = input.int(362, "Extension Time (Minutes)", minval=1, group=TKO)
-tkoHighColor = input.color(color.new(#2196F3, 100), "High Line Color", group=TKO)
-tkoLowColor = input.color(color.new(#F23645, 100), "Low Line Color", group=TKO)
+tkoHighColor = input.color(#2196F3, "High Line Color", group=TKO)
+tkoLowColor = input.color(#F23645, "Low Line Color", group=TKO)
 
 // Drawing Helpers
 drawLine(int fromTime, int toTime, float price, color lineColor) =>
     line.new(
-        fromTime, price, toTime, price,
-        xloc=xloc.bar_time,
-        color=lineColor,
-        width=lineWidth)
+         fromTime, price, toTime, price,
+         xloc=xloc.bar_time,
+         color=lineColor,
+         width=lineWidth)
 
 drawBand(int fromTime, int toTime, float boundary, float outerPrice, bool bullish) =>
     box.new(
-        left=fromTime,
-        top=math.max(boundary, outerPrice),
-        right=toTime,
-        bottom=math.min(boundary, outerPrice),
-        xloc=xloc.bar_time,
-        border_color=na,
-        border_width=0,
-        bgcolor=bullish ? bullishBandFillColor : bearishBandFillColor)
+         left=fromTime,
+         top=math.max(boundary, outerPrice),
+         right=toTime,
+         bottom=math.min(boundary, outerPrice),
+         xloc=xloc.bar_time,
+         border_color=na,
+         border_width=0,
+         bgcolor=bullish ? bullishBandFillColor : bearishBandFillColor)
 
     drawLine(
-        fromTime, toTime, outerPrice,
-        bullish ? bullishBandLineColor : bearishBandLineColor)
+         fromTime, toTime, outerPrice,
+         bullish ? bullishBandLineColor : bearishBandLineColor)
 
 // Session Logic
 processSession(
-    bool enabled, string timezone,
-    int startHour, int startMinute,
-    int rangeMinutes, int extensionMinutes,
-    color highColor, color lowColor,
-    array<int> times, array<int> closes,
-    array<float> highs, array<float> lows,
-    int confirmedThrough) =>
+     bool enabled, string timezone,
+     int startHour, int startMinute,
+     int rangeMinutes, int extensionMinutes,
+     color highColor, color lowColor,
+     array<int> times, array<int> closes,
+     array<float> highs, array<float> lows,
+     int confirmedThrough) =>
 
     var float rangeHigh = na
     var float rangeLow = na
@@ -109,11 +109,11 @@ processSession(
 
             if not na(barTime) and not na(barClose) and not na(barHigh) and not na(barLow)
                 int startTime = timestamp(
-                    timezone,
-                    year(barTime, timezone),
-                    month(barTime, timezone),
-                    dayofmonth(barTime, timezone),
-                    startHour, startMinute)
+                     timezone,
+                     year(barTime, timezone),
+                     month(barTime, timezone),
+                     dayofmonth(barTime, timezone),
+                     startHour, startMinute)
 
                 int rangeEnd = startTime + rangeMinutes * 60000
                 int sessionEnd = startTime + extensionMinutes * 60000
@@ -171,19 +171,19 @@ processSession(
 
 // One-Minute Data
 [lowerTimes, lowerCloses, lowerHighs, lowerLows] = request.security_lower_tf(
-    syminfo.tickerid, "1",
-    [time, time_close, high, low],
-    ignore_invalid_timeframe=true)
+     syminfo.tickerid, "1",
+     [time, time_close, high, low],
+     ignore_invalid_timeframe=true)
 
 [previousTime, previousClose, previousHigh, previousLow] = request.security(
-    syminfo.tickerid, "1",
-    [time[1], time_close[1], high[1], low[1]],
-    lookahead=barmerge.lookahead_on)
+     syminfo.tickerid, "1",
+     [time[1], time_close[1], high[1], low[1]],
+     lookahead=barmerge.lookahead_on)
 
 [currentTime, currentClose, currentHigh, currentLow] = request.security(
-    syminfo.tickerid, "1",
-    [time, time_close, high, low],
-    lookahead=barmerge.lookahead_off)
+     syminfo.tickerid, "1",
+     [time, time_close, high, low],
+     lookahead=barmerge.lookahead_off)
 
 int chartSeconds = timeframe.in_seconds()
 
@@ -197,7 +197,6 @@ int confirmedThrough = barstate.isconfirmed ? time_close : time
 if chartSeconds > 60
     if not barstate.isconfirmed and array.size(times) > 0
         confirmedThrough := array.get(times, array.size(times) - 1)
-
 else
     times := array.new_int()
     closes := array.new_int()
@@ -209,7 +208,6 @@ else
         array.push(closes, time_close)
         array.push(highs, high)
         array.push(lows, low)
-
     else
         if not na(previousTime)
             array.push(times, previousTime)
@@ -225,19 +223,19 @@ else
 
 // Session Execution
 processSession(
-    nyEnabled, "America/New_York",
-    nyHour, nyMinute, nyRange, nyExtension,
-    nyHighColor, nyLowColor,
-    times, closes, highs, lows, confirmedThrough)
+     nyEnabled, "America/New_York",
+     nyHour, nyMinute, nyRange, nyExtension,
+     nyHighColor, nyLowColor,
+     times, closes, highs, lows, confirmedThrough)
 
 processSession(
-    ldnEnabled, "Europe/London",
-    ldnHour, ldnMinute, ldnRange, ldnExtension,
-    ldnHighColor, ldnLowColor,
-    times, closes, highs, lows, confirmedThrough)
+     ldnEnabled, "Europe/London",
+     ldnHour, ldnMinute, ldnRange, ldnExtension,
+     ldnHighColor, ldnLowColor,
+     times, closes, highs, lows, confirmedThrough)
 
 processSession(
-    tkoEnabled, "Asia/Tokyo",
-    tkoHour, tkoMinute, tkoRange, tkoExtension,
-    tkoHighColor, tkoLowColor,
-    times, closes, highs, lows, confirmedThrough)
+     tkoEnabled, "Asia/Tokyo",
+     tkoHour, tkoMinute, tkoRange, tkoExtension,
+     tkoHighColor, tkoLowColor,
+     times, closes, highs, lows, confirmedThrough)
