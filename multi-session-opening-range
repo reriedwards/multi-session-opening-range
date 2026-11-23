@@ -6,20 +6,22 @@ const string GLOBAL = "Global Settings"
 
 lineWidth = input.int(1, "Line Thickness", minval=1, maxval=5, group=GLOBAL)
 showOpeningRange = input.bool(true, "Show Opening Range Lines", group=GLOBAL)
+openingRangeHighColor = input.color(#2196F3, "Opening Range High Color", group=GLOBAL)
+openingRangeLowColor = input.color(#F23645, "Opening Range Low Color", group=GLOBAL)
 
 // Bands
 const string BANDS = "Bands"
 
-bandMode = input.string("Fixed", "Band Mode", options=["Fixed", "Dynamic"], group=BANDS)
+bandMode = input.string("Dynamic", "Band Mode", options=["Fixed", "Dynamic"], group=BANDS)
 bandTicks = input.int(50, "Band Width (Ticks)", minval=1, group=BANDS)
 
 showBullishBand = input.bool(true, "Show Bullish Band", group=BANDS)
 bullishBandLineColor = input.color(#2196F3, "Bullish Band Line Color", group=BANDS)
-bullishBandFillColor = input.color(color.new(#2196F3, 80), "Bullish Band Fill Color", group=BANDS)
+bullishBandFillColor = input.color(color.new(#2196F3, 100), "Bullish Band Fill Color", group=BANDS)
 
 showBearishBand = input.bool(true, "Show Bearish Band", group=BANDS)
 bearishBandLineColor = input.color(#F23645, "Bearish Band Line Color", group=BANDS)
-bearishBandFillColor = input.color(color.new(#F23645, 80), "Bearish Band Fill Color", group=BANDS)
+bearishBandFillColor = input.color(color.new(#F23645, 100), "Bearish Band Fill Color", group=BANDS)
 
 // New York Session
 const string NY = "New York Session"
@@ -29,8 +31,6 @@ nyHour = input.int(9, "Start Hour", minval=0, maxval=23, group=NY)
 nyMinute = input.int(27, "Start Minute", minval=0, maxval=59, group=NY)
 nyRange = input.int(3, "Opening Range (Minutes)", minval=1, group=NY)
 nyExtension = input.int(392, "Extension Time (Minutes)", minval=1, group=NY)
-nyHighColor = input.color(#2196F3, "High Line Color", group=NY)
-nyLowColor = input.color(#F23645, "Low Line Color", group=NY)
 
 // London Session
 const string LDN = "London Session"
@@ -40,8 +40,6 @@ ldnHour = input.int(8, "Start Hour", minval=0, maxval=23, group=LDN)
 ldnMinute = input.int(27, "Start Minute", minval=0, maxval=59, group=LDN)
 ldnRange = input.int(3, "Opening Range (Minutes)", minval=1, group=LDN)
 ldnExtension = input.int(300, "Extension Time (Minutes)", minval=1, group=LDN)
-ldnHighColor = input.color(#2196F3, "High Line Color", group=LDN)
-ldnLowColor = input.color(#F23645, "Low Line Color", group=LDN)
 
 // Tokyo Session
 const string TKO = "Tokyo Session"
@@ -51,8 +49,6 @@ tkoHour = input.int(8, "Start Hour", minval=0, maxval=23, group=TKO)
 tkoMinute = input.int(57, "Start Minute", minval=0, maxval=59, group=TKO)
 tkoRange = input.int(3, "Opening Range (Minutes)", minval=1, group=TKO)
 tkoExtension = input.int(362, "Extension Time (Minutes)", minval=1, group=TKO)
-tkoHighColor = input.color(#2196F3, "High Line Color", group=TKO)
-tkoLowColor = input.color(#F23645, "Low Line Color", group=TKO)
 
 // Drawing Helpers
 drawLine(int fromTime, int toTime, float price, color lineColor) =>
@@ -82,7 +78,6 @@ processSession(
      bool enabled, string timezone,
      int startHour, int startMinute,
      int rangeMinutes, int extensionMinutes,
-     color highColor, color lowColor,
      array<int> times, array<int> closes,
      array<float> highs, array<float> lows,
      int confirmedThrough) =>
@@ -148,8 +143,8 @@ processSession(
                             rangeReady := true
 
                             if showOpeningRange
-                                drawLine(startTime, sessionEnd, rangeHigh, highColor)
-                                drawLine(startTime, sessionEnd, rangeLow, lowColor)
+                                drawLine(startTime, sessionEnd, rangeHigh, openingRangeHighColor)
+                                drawLine(startTime, sessionEnd, rangeLow, openingRangeLowColor)
 
                             if bandMode == "Fixed"
                                 if showBullishBand
@@ -225,17 +220,14 @@ else
 processSession(
      nyEnabled, "America/New_York",
      nyHour, nyMinute, nyRange, nyExtension,
-     nyHighColor, nyLowColor,
      times, closes, highs, lows, confirmedThrough)
 
 processSession(
      ldnEnabled, "Europe/London",
      ldnHour, ldnMinute, ldnRange, ldnExtension,
-     ldnHighColor, ldnLowColor,
      times, closes, highs, lows, confirmedThrough)
 
 processSession(
      tkoEnabled, "Asia/Tokyo",
      tkoHour, tkoMinute, tkoRange, tkoExtension,
-     tkoHighColor, tkoLowColor,
      times, closes, highs, lows, confirmedThrough)
