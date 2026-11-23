@@ -15,11 +15,11 @@ const string BANDS = "Bands"
 bandMode = input.string("Fixed", "Band Mode", options=["Fixed", "Dynamic"], group=BANDS)
 bandTicks = input.int(50, "Band Width (Ticks)", minval=1, group=BANDS)
 
-showBullishBand = input.bool(false, "Show Bullish Band", group=BANDS)
+showBullishBand = input.bool(true, "Show Bullish Band", group=BANDS)
 bullishBandLineColor = input.color(#2196F3, "Bullish Band Line Color", group=BANDS)
 bullishBandFillColor = input.color(color.new(#2196F3, 100), "Bullish Band Fill Color", group=BANDS)
 
-showBearishBand = input.bool(false, "Show Bearish Band", group=BANDS)
+showBearishBand = input.bool(true, "Show Bearish Band", group=BANDS)
 bearishBandLineColor = input.color(#F23645, "Bearish Band Line Color", group=BANDS)
 bearishBandFillColor = input.color(color.new(#F23645, 100), "Bearish Band Fill Color", group=BANDS)
 
